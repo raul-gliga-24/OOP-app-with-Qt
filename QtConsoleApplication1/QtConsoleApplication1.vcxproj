@@ -109,6 +109,7 @@
     <ClCompile Include="Tests\TestWorkList.cpp" />
     <ClCompile Include="UI\GUI.cpp" />
     <ClCompile Include="UI\UI.cpp" />
+    <ClCompile Include="UI\WorkListWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Domain\Masina.h" />
@@ -127,6 +128,7 @@
     <ClInclude Include="Tests\TestValidator.h" />
     <ClInclude Include="Tests\TestWorkList.h" />
     <QtMoc Include="UI\GUI.h" />
+    <QtMoc Include="UI\WorkListWindow.h" />
     <ClInclude Include="UI\UI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

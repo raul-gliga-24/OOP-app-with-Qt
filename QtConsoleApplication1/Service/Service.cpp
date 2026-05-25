@@ -5,6 +5,7 @@
 #include <cstring>
 #include <random>
 #include <algorithm>
+#include <fstream>
 
 void Service::addMasina(const char* nr, const char *producator, const int model, const char *tip) {
 
@@ -159,4 +160,23 @@ void Service::undo() {
     }
     undoStack.back()->doUndo();
     undoStack.pop_back();
+}
+
+bool Service::canUndo() const {
+    return !undoStack.empty();
+}
+
+void Service::exportWorkList(const std::string& filename) const {
+    std::ofstream out(filename);
+    if (!out.is_open()) {
+        throw std::runtime_error("Eroare! Nu s-a putut deschide fisierul pentru export!");
+    }
+    // Write all cars in the WorkList to the CSV file
+    for (const auto& masina : workList) {
+        out << masina.getNr() << ","
+            << masina.getProducator() << ","
+            << masina.getModel() << ","
+            << masina.getTip() << "\n";
+    }
+    out.close();
 }

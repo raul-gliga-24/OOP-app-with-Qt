@@ -2,5 +2,5 @@
   <Configurations>
     <Platform Name="x64" />
   </Configurations>
-  <Project Path="QtConsoleApplication1/QtConsoleApplication1.vcxproj" />
+  <Project Path="QtConsoleApplication1/QtConsoleApplication1.vcxproj" Id="9b1ce298-9302-486e-bcf0-e5ca9d5917f5" />
 </Solution>

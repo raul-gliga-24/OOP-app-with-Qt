@@ -29,6 +29,8 @@ public:
     void inchiriazaMasina(const char *nr);
     void returneazaMasina(const char *nr);
 
+    void exportWorkList(const std::string& filename) const;
+
     Masina *filtreazaDupaProducator(const char *producator, int &dimensiuneRezultat) const;
 
     Masina *filtreazaDupaTip(const char *tip, int &dimensiuneRezultat) const;
@@ -43,6 +45,7 @@ public:
     [[nodiscard]] const std::vector<Masina>& getWorkList() const;
 
     void undo();
+    bool canUndo() const;
 };
 
 

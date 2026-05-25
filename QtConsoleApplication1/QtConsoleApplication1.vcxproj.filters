@@ -71,6 +71,9 @@
     <ClCompile Include="UI\UI.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="UI\WorkListWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Domain\Masina.h">
@@ -124,6 +127,9 @@
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="UI\GUI.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="UI\WorkListWindow.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

@@ -2,6 +2,7 @@
 #include <qmessagebox.h>
 #include <qstring.h>
 #include <sstream>
+#include "WorkListWindow.h"
 
 MainWindow::MainWindow(Service& service, QWidget* parent) : QWidget(parent), service(service) {
 	setWindowTitle("Management Masini");
@@ -12,12 +13,17 @@ MainWindow::MainWindow(Service& service, QWidget* parent) : QWidget(parent), ser
 	QLabel* displayLable = new QLabel("Masini in sistem:", this);
 	mainLayout->addWidget(displayLable);
 
-	carListWidget = new QListWidget(this);
-	mainLayout->addWidget(carListWidget);
+	// carListWidget = new QListWidget(this);
+	carTableWidget = new QTableWidget(this);
+	carTableWidget->setColumnCount(4);
+	QStringList headers;
+	headers << "Nr" << "Producator" << "Model" << "Tip";
+	carTableWidget->setHorizontalHeaderLabels(headers);
+	carTableWidget->setSelectionBehavior(QAbstractItemView::SelectRows);
+	carTableWidget->setSelectionMode(QAbstractItemView::SingleSelection);
+	mainLayout->addWidget(carTableWidget);
+	// mainLayout->addWidget(carListWidget); 
 
-	refreshButton = new QPushButton("Refresh list:", this);
-	mainLayout->addWidget(refreshButton);
-	connect(refreshButton, &QPushButton::clicked, this, &MainWindow::refreshCarList);
 	//Indicator mod
 
 	modeLabel = new QLabel("Mod: Adaugare", this);
@@ -31,7 +37,7 @@ MainWindow::MainWindow(Service& service, QWidget* parent) : QWidget(parent), ser
 
 	QHBoxLayout* inputLayout1 = new QHBoxLayout();
 	QLabel* plateLabel = new QLabel("Nr inmatriculare:", this);
-	nrInput = new QLineEdit(plateLabel);
+	nrInput = new QLineEdit(this);
 	nrInput->setPlaceholderText("ex. AB123CD");
 	inputLayout1->addWidget(plateLabel);
 	inputLayout1->addWidget(nrInput);
@@ -47,10 +53,9 @@ MainWindow::MainWindow(Service& service, QWidget* parent) : QWidget(parent), ser
 
 	QHBoxLayout* inputLayout3 = new QHBoxLayout();
 	QLabel* modelLabel = new QLabel("Model(an)", this);
-	modelInput = new QSpinBox(this);
-	modelInput->setMinimum(1980);
-	modelInput->setMaximum(2100);
-	modelInput->setValue(2024);
+	modelInput = new QLineEdit(this);
+	modelInput->setPlaceholderText("ex. 2024");
+	modelInput->setValidator(new QIntValidator(1980, 2026, this));
 	inputLayout3->addWidget(modelLabel);
 	inputLayout3->addWidget(modelInput);
 	mainLayout->addLayout(inputLayout3);
@@ -68,16 +73,43 @@ MainWindow::MainWindow(Service& service, QWidget* parent) : QWidget(parent), ser
 	deleteButton = new QPushButton("Sterge masina", this);
 	updateButton = new QPushButton("Actualizeaza masina", this);
 	clearButton = new QPushButton("Curata campuri", this);
+	filterButton = new QPushButton("Mod Filtrare", this);
 	buttonsLayout->addWidget(addButton);
 	buttonsLayout->addWidget(deleteButton);
 	buttonsLayout->addWidget(updateButton);
 	buttonsLayout->addWidget(clearButton);
+	buttonsLayout->addWidget(filterButton);
 	mainLayout->addLayout(buttonsLayout);
+
+	QHBoxLayout* sortLayout = new QHBoxLayout();
+	sortButton = new QPushButton("Sortare model Crescator", this);
+	sortLayout->addWidget(sortButton);
+	mainLayout->addLayout(sortLayout);
+
+	// Add Worklist and Undo buttons
+	QHBoxLayout* extraLayout = new QHBoxLayout();
+	workListButton = new QPushButton("Worklist", this);
+	undoButton = new QPushButton("Undo", this);
+	extraLayout->addWidget(workListButton);
+	extraLayout->addWidget(undoButton);
+	mainLayout->addLayout(extraLayout);
 
 	connect(addButton, &QPushButton::clicked, this, &MainWindow::onAddCarClicked);
 	connect(deleteButton, &QPushButton::clicked, this, &MainWindow::onDeleteCarClicked);
 	connect(updateButton, &QPushButton::clicked, this, &MainWindow::onUpdateCarClicked);
 	connect(clearButton, &QPushButton::clicked, this, &MainWindow::onClearFieldsClicked);
+	connect(filterButton, &QPushButton::clicked, this, &MainWindow::onToggleFilterMode);
+	connect(sortButton, &QPushButton::clicked, this, &MainWindow::onSortButtonClicked);
+	connect(workListButton, &QPushButton::clicked, this, &MainWindow::onWorkListButtonClicked);
+	connect(undoButton, &QPushButton::clicked, this, &MainWindow::onUndoButtonClicked);
+
+	connect(producatorInput, &QLineEdit::textChanged, this, &MainWindow::onFilterCriteriaChanged);
+
+	connect(tipInput,&QLineEdit::textChanged, this,&MainWindow::onFilterCriteriaChanged);
+	connect(modelInput, &QLineEdit::textChanged, this, &MainWindow::onFilterCriteriaChanged);
+
+	connect(carTableWidget, &QTableWidget::itemSelectionChanged, this, &MainWindow::onCarListItemSelected);
+	// connect(carListWidget, &QListWidget::itemSelectionChanged, this, &MainWindow::onCarListItemSelected);
 
 	setLayout(mainLayout);
 
@@ -91,7 +123,7 @@ void MainWindow::onAddCarClicked() {
 
 	QString nr = nrInput->text().trimmed();
 	QString producator = producatorInput->text().trimmed();
-	int model = modelInput->value();
+	int model = modelInput->text().toInt();
 	QString tip = tipInput->text().trimmed();
 
 	if (nr.isEmpty() || producator.isEmpty() || tip.isEmpty()) {
@@ -105,8 +137,9 @@ void MainWindow::onAddCarClicked() {
 		nrInput->clear();
 		producatorInput->clear();
 		tipInput->clear();
-		modelInput->setValue(2026);
+		modelInput->clear();
 		refreshCarList();
+		updateUndoButtonState();
 	}
 	catch (const std::exception& e) {
 		QMessageBox::critical(this, "Eroare", QString::fromStdString(std::string(e.what())));
@@ -115,32 +148,22 @@ void MainWindow::onAddCarClicked() {
 
 void MainWindow::onDeleteCarClicked() {
 
-	QListWidgetItem* selectedIitem = carListWidget->currentItem();
-
-	if (!selectedIitem) {
+	// QListWidgetItem* selectedItem = carListWidget->currentItem();
+	QList<QTableWidgetItem*> selectedItems = carTableWidget->selectedItems();
+	if (selectedItems.size() < 4) {
 		QMessageBox::warning(this, "Eroare la selectare", "Va rog selectati ceva");
 		return;
 	}
-
-	QString itemText = selectedIitem->text();
-	QStringList lines = itemText.split("\n");
-	if (lines.isEmpty()) {
-		QMessageBox::warning(this, "Eroare", "Parsing nereusit");
-		return;
-	}
-
-	QString linienr = lines[0];
-	QString nr = linienr.split(": ").value(1, "");
-
+	QString nr = selectedItems[0]->text();
 	if (nr.isEmpty()) {
 		QMessageBox::warning(this, "Error", "Extragere nr nereusita");
 		return;
 	}
-
 	try {
 		service.removeMasina(nr.toStdString().c_str());
 		QMessageBox::information(this, "Success", "Masina stearsa!");
 		refreshCarList();
+		updateUndoButtonState();
 	}
 	catch(const std::exception& e){
 		QMessageBox::critical(this, "Eroare", QString::fromStdString(std::string(e.what())));
@@ -149,26 +172,31 @@ void MainWindow::onDeleteCarClicked() {
 }
 
 void MainWindow::refreshCarList() {
-
-	carListWidget->clear();
-
+	// carListWidget->clear();
+	carTableWidget->setRowCount(0);
 	const auto& cars = service.getAllMasini();
-
+	int row = 0;
 	for (const auto& car : cars) {
-		QString carInfo = QString::fromStdString(
-			std::string("NR: ") + car.getNr() +
-			"\nProducator: " + car.getProducator() +
-			"\nModel: " + std::to_string(car.getModel()) +
-			"\nTip: " + car.getTip()
-		);
-		carListWidget->addItem(carInfo);
+		carTableWidget->insertRow(row);
+		carTableWidget->setItem(row, 0, new QTableWidgetItem(car.getNr()));
+		carTableWidget->setItem(row, 1, new QTableWidgetItem(car.getProducator()));
+		carTableWidget->setItem(row, 2, new QTableWidgetItem(QString::number(car.getModel())));
+		carTableWidget->setItem(row, 3, new QTableWidgetItem(car.getTip()));
+		row++;
+		// QString carInfo = QString::fromStdString(
+		//     std::string("NR: ") + car.getNr() +
+		//     "\nProducator: " + car.getProducator() +
+		//     "\nModel: " + std::to_string(car.getModel()) +
+		//     "\nTip: " + car.getTip()
+		// );
+		// carListWidget->addItem(carInfo); // Old list widget
 	}
 }
 
 void MainWindow::onUpdateCarClicked() {
 	QString nr = nrInput->text().trimmed();
 	QString producator = producatorInput->text().trimmed();
-	int model = modelInput->value();
+	int model = modelInput->text().toInt();
 	QString tip = tipInput->text().trimmed();
 
 
@@ -183,9 +211,10 @@ void MainWindow::onUpdateCarClicked() {
 		nrInput->clear();
 		producatorInput->clear();
 		tipInput->clear();
-		modelInput->setValue(2026);
+		modelInput->clear();
 		modeLabel->setText("Mod: Adaugare");
 		refreshCarList();
+		updateUndoButtonState();
 	}
 	catch (const std::exception& e) {
 		QMessageBox::critical(this, "Eroare", QString::fromStdString(std::string(e.what())));
@@ -193,31 +222,23 @@ void MainWindow::onUpdateCarClicked() {
 }
 
 void MainWindow::onCarListItemSelected() {
-	QListWidgetItem* selectedItem = carListWidget->currentItem();
 
-	if (!selectedItem) {
+	if (isFilterMode) {
 		return;
 	}
-
-	QString itemText = selectedItem->text();
-	QStringList lines = itemText.split("\n");
-
-	if (lines.size() < 4) {
-		QMessageBox::warning(this, "Eroare", "Parsing nereusit");
+	// QListWidgetItem* selectedItem = carListWidget->currentItem();
+	QList<QTableWidgetItem*> selectedItems = carTableWidget->selectedItems();
+	if (selectedItems.size() < 4) {
 		return;
 	}
-
-	//"NR: AB123CD", "Producator: Toyota", "Model: 2024", "Tip: SUV"
-	QString nr = lines[0].split(": ").value(1, "");
-	QString producator = lines[1].split(": ").value(1, "");
-	QString model = lines[2].split(": ").value(1, "");
-	QString tip = lines[3].split(": ").value(1, "");
-
+	QString nr = selectedItems[0]->text();
+	QString producator = selectedItems[1]->text();
+	QString model = selectedItems[2]->text();
+	QString tip = selectedItems[3]->text();
 	nrInput->setText(nr);
 	producatorInput->setText(producator);
 	tipInput->setText(tip);
-	modelInput->setValue(model.toInt());
-
+	modelInput->setText(model);
 	modeLabel->setText("Mod: Modificare - NR: " + nr);
 }
 
@@ -225,7 +246,126 @@ void MainWindow::onClearFieldsClicked() {
 	nrInput->clear();
 	producatorInput->clear();
 	tipInput->clear();
-	modelInput->setValue(2026);
+	modelInput->clear();
 	modeLabel->setText("Mod: Adaugare");
-	carListWidget->clearSelection();
+	// carListWidget->clearSelection();
+	carTableWidget->clearSelection();
+	updateUndoButtonState();
+}
+
+void MainWindow::onToggleFilterMode() {
+	isFilterMode = !isFilterMode;
+
+	if (isFilterMode) {
+		modeLabel->setText("Mod: Filtrare");
+		filterButton->setText("Iesire Filter Mode");
+		addButton->setEnabled(false);
+		updateButton->setEnabled(false);
+		deleteButton->setEnabled(false);
+
+		nrInput->clear();
+		producatorInput->clear();
+		tipInput->clear();
+	}
+	else {
+		modeLabel->setText("Mod Adaugare");
+		filterButton->setText("Mod Filtrare");
+
+		addButton->setEnabled(true);
+		updateButton->setEnabled(true);
+		deleteButton->setEnabled(true);
+
+		onClearFieldsClicked();
+		refreshCarList();
+	}
+}
+
+void MainWindow::onFilterCriteriaChanged() {
+	if (!isFilterMode) {
+		return;
+	}
+	QString filterProducator = producatorInput->text().trimmed().toLower();
+	QString filterTip = tipInput->text().trimmed().toLower();
+	QString filterModel = modelInput->text().trimmed();
+	// carListWidget->clear(); 
+	carTableWidget->setRowCount(0);
+	const auto& cars = service.getAllMasini();
+	int row = 0;
+	for (const auto& car : cars) {
+		QString prod = QString::fromStdString(car.getProducator()).toLower();
+		QString tip = QString::fromStdString(car.getTip()).toLower();
+		QString model = QString::number(car.getModel());
+
+		bool matchProducator = filterProducator.isEmpty() || prod.contains(filterProducator);
+		bool matchTip = filterTip.isEmpty() || tip.contains(filterTip);
+		bool matchModel = filterModel.isEmpty() || model == filterModel;
+
+
+		if (matchProducator && matchTip && matchModel) {
+			carTableWidget->insertRow(row);
+			carTableWidget->setItem(row, 0, new QTableWidgetItem(car.getNr()));
+			carTableWidget->setItem(row, 1, new QTableWidgetItem(car.getProducator()));
+			carTableWidget->setItem(row, 2, new QTableWidgetItem(QString::number(car.getModel())));
+			carTableWidget->setItem(row, 3, new QTableWidgetItem(car.getTip()));
+			row++;
+			// QString carInfo = QString::fromStdString(std::string("NR: ") + car.getNr() + "\n Producator: " + car.getProducator() + "\n Model: " + std::to_string(car.getModel()) + "\n Tip: " + car.getTip());
+			// carListWidget->addItem(carInfo);
+		}
+	}
+}
+
+void MainWindow::onSortButtonClicked() {
+	int dim = 0;
+
+	const Masina* masiniSortate = service.sortMasini("model", false, dim);
+	// carListWidget->clear();
+	carTableWidget->setRowCount(0);
+	for (int i = 0; i < dim; ++i) {
+		const Masina& car = masiniSortate[i];
+		carTableWidget->insertRow(i);
+		carTableWidget->setItem(i, 0, new QTableWidgetItem(car.getNr()));
+		carTableWidget->setItem(i, 1, new QTableWidgetItem(car.getProducator()));
+		carTableWidget->setItem(i, 2, new QTableWidgetItem(QString::number(car.getModel())));
+		carTableWidget->setItem(i, 3, new QTableWidgetItem(car.getTip()));
+		// QString carInfo = QString::fromStdString(
+		//     std::string("NR: ") + car.getNr() +
+		//     "\nProducator: " + car.getProducator() +
+		//     "\nModel: " + std::to_string(car.getModel()) +
+		//     "\nTip: " + car.getTip()
+		// );
+		// carListWidget->addItem(carInfo); // Old list widget
+	}
+	delete[] masiniSortate;
+
+
+
+}
+
+void MainWindow::onWorkListButtonClicked() {
+	if (!workListWindow) {
+		workListWindow = new WorkListWindow(service, nullptr);
+	}
+	workListWindow->show();
+	workListWindow->raise();
+	workListWindow->activateWindow();
+}
+
+void MainWindow::onUndoButtonClicked() {
+	try {
+		service.undo();
+		refreshCarList();
+		updateUndoButtonState();
+	} catch (const std::exception& e) {
+		QMessageBox::warning(this, "Undo", e.what());
+	}
+}
+
+void MainWindow::updateUndoButtonState() {
+    if (service.canUndo()) {
+        undoButton->setEnabled(true);
+        undoButton->setStyleSheet("background-color: yellow; font-weight: bold;");
+    } else {
+        undoButton->setEnabled(false);
+        undoButton->setStyleSheet("");
+    }
 }

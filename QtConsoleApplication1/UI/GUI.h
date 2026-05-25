@@ -9,8 +9,10 @@
 #include <qhboxlayout>
 #include <qlistwidget.h>
 #include <qspinbox.h>
+#include <QTableWidget>
 #include "../Service/Service.h"
-
+#include <QIntValidator>
+#include "WorkListWindow.h"
 
 class MainWindow :public QWidget
 {
@@ -25,24 +27,36 @@ private slots:
 	void onUpdateCarClicked();
 	void onCarListItemSelected();
 	void onClearFieldsClicked();
+
+	//Filters
+	void onToggleFilterMode();
+	void onFilterCriteriaChanged();
+	//Sort
+	void onSortButtonClicked();
+	void onWorkListButtonClicked();
+    void onUndoButtonClicked();
 private:
+	bool isFilterMode = false;
 	Service& service;
 
 
 	//features basic
-	QListWidget* carListWidget;
+	//QListWidget* carListWidget; // Old list widget
+	QTableWidget* carTableWidget; // New table widget
 	QLineEdit* nrInput;
 	QLineEdit* producatorInput;
 	QLineEdit* tipInput;
-	QSpinBox* modelInput;
+	QLineEdit* modelInput;
 	QPushButton* addButton;
 	QPushButton* updateButton;
 	QPushButton* deleteButton;
 	QPushButton* clearButton;
-	QPushButton* refreshButton;
-
-
-	//more advanced
+	QPushButton* filterButton;
+	QPushButton* sortButton;
+	QPushButton* workListButton;
+	QPushButton* undoButton;
+	WorkListWindow* workListWindow = nullptr;
+	void updateUndoButtonState();
 	QVBoxLayout* mainLayout;
 	QLabel* modeLabel;
 };
