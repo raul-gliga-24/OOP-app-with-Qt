@@ -132,10 +132,12 @@ Masina* Service::sortMasini(const char* key, const bool reverse, int& dimensiune
 void Service::addToWorkList(const char* nr) {
     const Masina& masina = repo.find(nr);
     workList.push_back(masina);
+    notifyObservers();
 }
 
 void Service::clearWorkList() {
     workList.clear();
+    notifyObservers();
 }
 
 void Service::generateWorkList(int count) {
@@ -148,6 +150,7 @@ void Service::generateWorkList(int count) {
     for (int i = 0; i < count && i < static_cast<int>(allMasini.size()); i++) {
         workList.push_back(allMasini[i]);
     }
+    notifyObservers();
 }
 
 const std::vector<Masina>& Service::getWorkList() const {

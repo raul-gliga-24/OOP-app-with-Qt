@@ -92,6 +92,17 @@ MainWindow::MainWindow(Service& service, QWidget* parent) : QWidget(parent), ser
 	undoButton = new QPushButton("Undo", this);
 	extraLayout->addWidget(workListButton);
 	extraLayout->addWidget(undoButton);
+
+	openCRUDBtn = new QPushButton("Cos CRUD", this);
+	extraLayout->addWidget(openCRUDBtn);
+	connect(openCRUDBtn, &QPushButton::clicked, this, &MainWindow::onOpenCRUDClicked);
+
+	openReadOnlyBtn = new QPushButton("Cos ReadOnly", this);
+	extraLayout->addWidget(openReadOnlyBtn);
+	connect(openReadOnlyBtn, &QPushButton::clicked, this, &MainWindow::onOpenReadOnlyClicked);
+
+
+
 	mainLayout->addLayout(extraLayout);
 
 	connect(addButton, &QPushButton::clicked, this, &MainWindow::onAddCarClicked);
@@ -368,4 +379,15 @@ void MainWindow::updateUndoButtonState() {
         undoButton->setEnabled(false);
         undoButton->setStyleSheet("");
     }
+}
+void MainWindow::onOpenCRUDClicked() {
+	CosCRUDGUI* window = new CosCRUDGUI(service, nullptr);
+	window->setAttribute(Qt::WA_DeleteOnClose);
+	window->show();
+}
+
+void MainWindow::onOpenReadOnlyClicked() {
+	CosReadOnlyGUI* window = new CosReadOnlyGUI(service, nullptr);
+	window->setAttribute(Qt::WA_DeleteOnClose);
+	window->show();
 }

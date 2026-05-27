@@ -93,6 +93,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="UI\CosReadOnlyGUI.cpp" />
+    <ClCompile Include="UI\CosCRUDGUI.cpp" />
     <ClCompile Include="Domain\Masina.cpp" />
     <ClCompile Include="Domain\Validator.cpp" />
     <ClCompile Include="main.cpp" />
@@ -109,15 +111,20 @@
     <ClCompile Include="Tests\TestWorkList.cpp" />
     <ClCompile Include="UI\GUI.cpp" />
     <ClCompile Include="UI\UI.cpp" />
+    <ClCompile Include="UI\WorkListModel.cpp" />
     <ClCompile Include="UI\WorkListWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="UI\CosCRUDGUI.h" />
+    <QtMoc Include="UI\CosReadOnlyGUI.h" />
+    <QtMoc Include="UI\WorkListModel.h" />
     <ClInclude Include="Domain\Masina.h" />
     <ClInclude Include="Domain\Validator.h" />
     <ClInclude Include="Repository\FileRepo.h" />
     <ClInclude Include="Repository\ProbabilisticRepo.h" />
     <ClInclude Include="Repository\Repo.h" />
     <ClInclude Include="Repository\Repository.h" />
+    <ClInclude Include="Service\Observer.h" />
     <ClInclude Include="Service\Service.h" />
     <ClInclude Include="Service\Undo.h" />
     <ClInclude Include="Tests\TestDomain.h" />

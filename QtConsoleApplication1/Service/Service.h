@@ -6,12 +6,13 @@
 #define LAB67_SERVICE_H
 #include "../Domain/Validator.h"
 #include "../Repository/Repo.h"
+#include "Observer.h"
 #include "Undo.h"
 #include <string>
 #include <vector>
 #include <memory>
 
-class Service {
+class Service : public Observable{
 private:
     Repo& repo;
     MasinaValidator& val;
@@ -29,8 +30,6 @@ public:
     void inchiriazaMasina(const char *nr);
     void returneazaMasina(const char *nr);
 
-    void exportWorkList(const std::string& filename) const;
-
     Masina *filtreazaDupaProducator(const char *producator, int &dimensiuneRezultat) const;
 
     Masina *filtreazaDupaTip(const char *tip, int &dimensiuneRezultat) const;
@@ -46,6 +45,7 @@ public:
 
     void undo();
     bool canUndo() const;
+    void exportWorkList(const std::string& filename) const;
 };
 
 

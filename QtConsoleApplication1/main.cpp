@@ -1,4 +1,5 @@
 //#define _CRTDBG_MAP_ALLOC
+#pragma warning(disable: 4996)
 #include <crtdbg.h>
 #include <stdlib.h>
 #include <iostream>
@@ -20,13 +21,6 @@
 #include "UI/GUI.h"
 
 int main(int argc,char**argv) {
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-    (void)_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
-    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
-    (void)_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT);
-    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
-    (void)_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
     {
         std::cout << "Running tests: \n";
         run_tests_domain();

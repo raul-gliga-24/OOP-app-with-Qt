@@ -1,15 +1,18 @@
 #ifndef LAB67_GUI_H
 #define LAB67_GUI_H
+#define QT_NO_DEPRECATED_WARNINGS
 
 #include <qwidget.h>
 #include <qpushbutton.h>
 #include <qlabel.h>
+#include "CosCRUDGUI.h"
 #include <qvboxlayout>
 #include <qlineedit.h>
 #include <qhboxlayout>
 #include <qlistwidget.h>
 #include <qspinbox.h>
 #include <QTableWidget>
+#include "CosReadOnlyGUI.h"
 #include "../Service/Service.h"
 #include <QIntValidator>
 #include "WorkListWindow.h"
@@ -27,7 +30,8 @@ private slots:
 	void onUpdateCarClicked();
 	void onCarListItemSelected();
 	void onClearFieldsClicked();
-
+	void onOpenCRUDClicked();
+	void onOpenReadOnlyClicked();
 	//Filters
 	void onToggleFilterMode();
 	void onFilterCriteriaChanged();
@@ -54,7 +58,10 @@ private:
 	QPushButton* filterButton;
 	QPushButton* sortButton;
 	QPushButton* workListButton;
+	QPushButton* openReadOnlyBtn;
+
 	QPushButton* undoButton;
+	QPushButton* openCRUDBtn;
 	WorkListWindow* workListWindow = nullptr;
 	void updateUndoButtonState();
 	QVBoxLayout* mainLayout;
